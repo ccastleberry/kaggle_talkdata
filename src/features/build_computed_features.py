@@ -65,7 +65,7 @@ def do_mean( df, group_cols, counted, agg_name, agg_type='float32', show_max=Fal
 def do_var( df, group_cols, counted, agg_name, agg_type='float32', show_max=False, show_agg=True ):
     if show_agg:
         print( "Calculating variance of ", counted, " by ", group_cols , '...' )
-    gp = df[group_cols+[counted]].groupby(group_cols)[counted].var().reset_index().rename(columns={counted:agg_name})
+    gp = df[group_cols+[counted]].groupby(group_cols)[counted].var().reset_index().rename(columns={counted:agg_name}).fillna(0)
     df = df.merge(gp, on=group_cols, how='left')
     del gp
     if show_max:
@@ -75,6 +75,9 @@ def do_var( df, group_cols, counted, agg_name, agg_type='float32', show_max=Fals
     return( df )
 
 def transform_data(train_df):
+    ''' Test docstring.
+    '''
+
     print('Extracting new features...')
     train_df['hour'] = pd.to_datetime(train_df.click_time).dt.hour.astype('uint8')
     train_df['day'] = pd.to_datetime(train_df.click_time).dt.day.astype('uint8')
@@ -121,7 +124,7 @@ def transform_data(train_df):
     train_df[new_feature] = pd.Series(QQ).astype('float32')
     predictors.append(new_feature)
 
-    train_df[new_feature+'_shift'] = train_df[new_feature].shift(+1).values
+    train_df[new_feature+'_shift'] = train_df[new_feature].shift(+1).fillna(0).values
     predictors.append(new_feature+'_shift')
 
     del QQ
@@ -142,5 +145,5 @@ def transform_data(train_df):
     categorical = ['app', 'device', 'os', 'channel', 'hour', 'day']
     print('predictors',predictors)
 
-    return train_df, predictors
+    return train_df, predictors, categorical, target
 

@@ -99,6 +99,7 @@ def transform_data(train_df):
     train_df = do_var( train_df, ['ip', 'app', 'os'], 'hour', 'ip_app_os_var', show_max=True ); gc.collect()
     train_df = do_var( train_df, ['ip', 'app', 'channel'], 'day', 'ip_app_channel_var_day', show_max=True ); gc.collect()
     train_df = do_mean( train_df, ['ip', 'app', 'channel'], 'hour', 'ip_app_channel_mean_hour', show_max=True ); gc.collect()
+    train_df = do_mean( train_df, ['ip', 'app', 'channel'], 'is_attributed', 'ip_app_channel_mean_attrib', show_max=True ); gc.collect()
 
     print('doing nextClick')
     predictors=[]
@@ -145,5 +146,5 @@ def transform_data(train_df):
     categorical = ['app', 'device', 'os', 'channel', 'hour', 'day']
     print('predictors',predictors)
 
-    return train_df, predictors, categorical, target
+    return train_df
 

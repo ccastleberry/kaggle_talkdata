@@ -39,6 +39,9 @@ def main(input_filepath, output_filepath):
         train_chunksize = 50000000
         val_chunksize = 10000000
 
+    len_train = train_chunksize
+    val_size = val_chunksize
+
     cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'is_attributed']
     val_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time']
     test_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'click_id']
@@ -56,7 +59,10 @@ def main(input_filepath, output_filepath):
         del val_df; gc.collect()
 
         print('Loading Test data')
-        test_df = pd.read_csv(test_path, dtype=dtypes, usecols=test_cols, parse_dates=['click_time'])
+        if DEBUG:
+            test_df = pd.read_csv(test_path, dtype=dtypes, usecols=test_cols, parse_dates=['click_time'], nrows=1000)
+        else:
+            test_df = pd.read_csv(test_path, dtype=dtypes, usecols=test_cols, parse_dates=['click_time'])
         train_df=train_df.append(test_df)
         del test_df; gc.collect()
 
@@ -68,11 +74,11 @@ def main(input_filepath, output_filepath):
         val_df = train_df[(len_train-val_size):len_train]
         train_df = train_df[:(len_train-val_size)]
 
-        train_filename = os.path.join(output_filepath, 'train{}'.format(i))
+        train_filename = os.path.join(output_filepath, 'train{}.csv'.format(i))
         train_df.to_csv(train_filename, index=False)
-        val_filename = os.path.join(output_filepath, 'val{}'.format(i))
+        val_filename = os.path.join(output_filepath, 'val{}.csv'.format(i))
         val_df.to_csv(val_filename, index=False)
-        test_filename = os.path.join(output_filepath, 'test{}'.format(i))
+        test_filename = os.path.join(output_filepath, 'test{}.csv'.format(i))
         test_df.to_csv(test_filename, index=False)
 
         del test_df, val_df, train_df; gc.collect()

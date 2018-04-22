@@ -8,7 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 import build_computed_features
 
-DEBUG = True
+DEBUG = False
 
 #@click.command()
 #@click.argument('input_filepath', type=click.Path(exists=True))
@@ -21,6 +21,7 @@ def main(input_filepath, output_filepath):
     logger.info('making final data set from raw data')
 
     train_path = os.path.join(input_filepath, 'train.csv')
+    print(str(train_path))
     test_path = os.path.join(input_filepath, 'test.csv')
 
     dtypes = {

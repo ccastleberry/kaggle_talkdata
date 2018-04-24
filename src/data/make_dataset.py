@@ -8,7 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 import build_computed_features
 
-DEBUG = False
+DEBUG = True
 
 #@click.command()
 #@click.argument('input_filepath', type=click.Path(exists=True))

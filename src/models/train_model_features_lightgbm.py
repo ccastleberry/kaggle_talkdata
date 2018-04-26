@@ -94,7 +94,7 @@ for i in  range(1,4):
                      evals_result=evals_results,
                      num_boost_round=num_boost_round,
                      early_stopping_rounds=early_stopping_rounds,
-                     verbose_eval=1
+                     verbose_eval=10
                      )
     best_iter = bst1.best_iteration
     print("Finished Training Round")
@@ -104,9 +104,9 @@ for i in  range(1,4):
     # loop through validation sets:
     print("Making Validation Predictions")
     for j in range(1,4):
-        
+
         val_df = pd.read_csv(VAL_PATH.format(i))
-        
+
         # get predicitons
         val_preds = bst1.predict(val_df[predictors],num_iteration=best_iter)
         del val_df; gc.collect()

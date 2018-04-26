@@ -84,12 +84,20 @@ for i in  range(1,4):
                         feature_name=predictors,
                         categorical_feature=categorical_features
                         )
+
+    # Read in val set
+    val_df_early = pd.read_csv(VAL_PATH.format(i))
+
+    xgval = lgb.Dataset(val_df_early[predictors].values, label=val_df_early[target].values,
+                        feature_name=predictors,
+                        categorical_feature=categorical_features
+                        )
     # Train Model
 
     bst1 = lgb.train(lgb_params,
                      xgtrain,
-                     valid_sets=[xgtrain],
-                     valid_names=['train'],
+                     valid_sets=[xgtrain, xgval],
+                     valid_names=['train', 'val'],
                      evals_result=evals_results,
                      num_boost_round=num_boost_round,
                      early_stopping_rounds=early_stopping_rounds,
@@ -102,9 +110,9 @@ for i in  range(1,4):
 
     # loop through validation sets:
     for j in range(1,4):
-        # Read in val set
+        
         val_df = pd.read_csv(VAL_PATH.format(i))
-
+        
         # get predicitons
         val_preds = bst1.predict(val_df[predictors],num_iteration=best_iter)
         del val_df; gc.collect()

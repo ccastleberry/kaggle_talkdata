@@ -23,7 +23,7 @@ dtypes = {
     'os'            : 'uint16',
     'channel'       : 'uint16',
     'is_attributed' : 'uint8',
-    'click_id'      : 'uint32'
+    #'click_id'      : 'uint32'
 }
 
 lgb_params = {
@@ -75,9 +75,9 @@ test_sub_df = pd.DataFrame()
 
 # Loop Through all three training sets
 for i in  range(1,4):
-
-    # read in training file
-    train_df = pd.read_csv(TRAIN_PATH.format(i))
+    print('***** Round 1 *****')
+    print("Reading in training file.")
+    train_df = pd.read_csv(TRAIN_PATH.format(i), dtype=dtypes)
 
     # build lgb dataset
     xgtrain = lgb.Dataset(train_df[predictors].values, label=train_df[target].values,

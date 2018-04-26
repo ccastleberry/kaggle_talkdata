@@ -5,7 +5,15 @@ import gc
 
 BASE_PATH = os.path.join('..', '..')
 DATA_FOLDER = os.path.join(BASE_PATH , 'data', 'processed')
+TRAIN_PATH = os.path.join(DATA_FOLDER, 'train{}.csv')
+VAL_PATH = os.path.join(DATA_FOLDER, 'val{}.csv')
+TEST_PATH =  os.path.join(DATA_FOLDER, 'test{}.csv')
 SUBMISSION_FOLDER = os.path.join(BASE_PATH, 'submissions')
+SUB_VAL_FOLDER = os.path.join(SUBMISSION_FOLDER, 'validation')
+SUB_TEST_FOLDER = os.path.join(SUBMISSION_FOLDER, 'test')
+VAL_SUB_PATH = os.path.join(SUB_VAL_FOLDER, 'cf_lgb_val_subs.csv')
+TEST_SUB_PATH = os.path.join(SUB_TEST_FOLDER, 'cf_lgb_test_subs.csv')
+
 
 
 dtypes = {
@@ -42,23 +50,102 @@ lgb_params = {
     'scale_pos_weight':200 # because training data is extremely unbalanced
 }
 
+target = 'is_attributed'
+predictors = ['app', 'channel', 'click_id', 'device', 'ip', 'os',
+       'hour', 'day', 'X0', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'X8',
+       'ip_tcount', 'ip_app_count', 'ip_app_os_count', 'ip_tchan_count',
+       'ip_app_os_var', 'ip_app_channel_var_day', 'ip_app_channel_mean_hour',
+       'ip_app_channel_mean_attrib', 'nextClick', 'nextClick_shift']
+
+categorical_features = ['app', 'channel', 'click_id', 'device', 'ip', 'os']
+
+'''
 xgtrain = lgb.Dataset(dtrain[predictors].values, label=dtrain[target].values,
                         feature_name=predictors,
                         categorical_feature=categorical_features
                         )
-xgvalid = lgb.Dataset(dvalid[predictors].values, label=dvalid[target].values,
+'''
+
+evals_results = {}
+early_stopping_rounds = 30
+num_boost_round = 1000
+
+val_sub_df = pd.DataFrame()
+test_sub_df = pd.DataFrame()
+
+# Loop Through all three training sets
+for i in  range(1,4):
+
+    # read in training file
+    train_df = pd.read_csv(TRAIN_PATH.format(i))
+
+    # build lgb dataset
+    xgtrain = lgb.Dataset(train_df[predictors].values, label=train_df[target].values,
                         feature_name=predictors,
                         categorical_feature=categorical_features
                         )
+    # Train Model
 
-evals_results = {}
+    bst1 = lgb.train(lgb_params,
+                     xgtrain,
+                     valid_sets=[xgtrain],
+                     valid_names=['train'],
+                     evals_result=evals_results,
+                     num_boost_round=num_boost_round,
+                     early_stopping_rounds=early_stopping_rounds,
+                     verbose_eval=10
+                     )
+    best_iter = bst1.best_iteration
 
-bst1 = lgb.train(lgb_params, 
-                    xgtrain, 
-                    valid_sets=[xgtrain, xgvalid], 
-                    valid_names=['train','valid'], 
-                    evals_result=evals_results, 
-                    num_boost_round=num_boost_round,
-                    early_stopping_rounds=early_stopping_rounds,
-                    verbose_eval=10, 
-                    feval=feval)
+
+    # Train val set
+
+    # loop through validation sets:
+    for j in range(1,4):
+        # Read in val set
+        val_df = pd.read_csv(VAL_PATH.format(i))
+
+        # get predicitons
+        val_preds = bst1.predict(val_df[predictors],num_iteration=best_iter)
+        del val_df; gc.collect()
+
+        # add validation predictions
+        if j ==1:
+            val_subs = val_preds / 3.0
+        else:
+            val_subs += val_preds / 3.0
+
+    # record val predictions
+    if i == 1:
+        val_sub_df['cf_lgb_subs'] = val_subs / 3.0
+    else:
+        val_sub_df['cf_lgb_subs'] = val_sub_df['cf_lgb_subs'] + (val_subs / 3.0)
+
+    # Train Test set
+
+    # loop through test sets:
+
+    for j in range(1,4):
+        # Read in test set
+        test_df = pd.read_csv(TEST_PATH.format(i))
+
+        # get predictions
+        test_preds = bst1.predict(test_df[predictors], num_iteration=best_iter)
+        del test_df; gc.collect()
+
+        # add test predictions
+        if j ==1:
+            test_subs = test_preds / 3.0
+        else:
+            test_subs += test_preds / 3.0
+    if i == 1:
+        test_sub_df['cf_lgb_subs'] = test_subs / 3.0
+    else:
+        test_sub_df['cf_lgb_subs'] = test_sub_df['cf_lgb_subs'] + (test_subs / 3.0)
+
+    # Record test predictions
+
+
+# Save predictions
+val_sub_df.to_csv(VAL_SUB_PATH, index=False)
+test_sub_df.to_csv(TEST_SUB_PATH, index=False)
